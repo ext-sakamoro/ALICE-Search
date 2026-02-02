@@ -1,0 +1,24 @@
+[package]
+name = "alice-search"
+version = "0.1.0"
+edition = "2021"
+authors = ["Moroya Sakamoto"]
+description = "FM-Index based full-text search. Compressed and fast."
+license = "AGPL-3.0"
+repository = "https://github.com/ext-sakamoro/ALICE-Search"
+keywords = ["search", "fm-index", "bwt", "compression", "alice"]
+categories = ["algorithms", "compression", "text-processing"]
+
+[features]
+default = ["std"]
+std = ["alloc"]
+alloc = []
+
+[dependencies]
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+opt-level = 3
+strip = true
