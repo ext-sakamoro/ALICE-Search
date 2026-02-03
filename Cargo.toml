@@ -16,6 +16,16 @@ alloc = []
 
 [dependencies]
 
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "search_bench"
+harness = false
+
+[[example]]
+name = "full_text_search"
+
 [profile.release]
 lto = "fat"
 codegen-units = 1
