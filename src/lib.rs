@@ -52,6 +52,11 @@ pub mod wavelet;
 
 pub use search::AliceIndex;
 
+#[cfg(feature = "text")]
+pub mod text_bridge;
+#[cfg(feature = "analytics")]
+pub mod analytics_bridge;
+
 /// Version
 pub const VERSION: &str = "0.2.1-ultra-fried";
 

@@ -13,8 +13,12 @@ categories = ["algorithms", "compression", "text-processing"]
 default = ["std"]
 std = ["alloc"]
 alloc = []
+text = ["dep:alice-text", "std"]         # ALICE-Text compressed text search
+analytics = ["dep:alice-analytics", "std"]  # ALICE-Analytics search query metrics
 
 [dependencies]
+alice-text = { path = "../ALICE-Text", optional = true }
+alice-analytics = { path = "../ALICE-Analytics", optional = true, default-features = false, features = ["std"] }
 
 [dev-dependencies]
 criterion = "0.5"
