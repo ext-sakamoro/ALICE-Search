@@ -233,6 +233,26 @@ for layer in (0..8).rev() {
 | ALICE-Sync | Fast pattern matching in P2P sync |
 | ALICE-Crypto | Encrypted searchable index |
 
+## Cross-Crate Bridges
+
+### DB Bridge (feature: `db`)
+
+Search query metrics persistence via [ALICE-DB](../ALICE-DB). Records query count, result count, and latency as time-series data.
+
+```toml
+[dependencies]
+alice-search = { path = "../ALICE-Search", features = ["db"] }
+```
+
+### Cache Bridge (feature: `cache`)
+
+Search result caching via [ALICE-Cache](../ALICE-Cache). Caches FM-Index lookup results keyed by FNV-1a query hash for instant repeated lookups.
+
+```toml
+[dependencies]
+alice-search = { path = "../ALICE-Search", features = ["cache"] }
+```
+
 ## License
 
 **GNU AGPLv3** (Affero General Public License v3.0)
