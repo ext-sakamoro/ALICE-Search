@@ -56,6 +56,10 @@ pub use search::AliceIndex;
 pub mod text_bridge;
 #[cfg(feature = "analytics")]
 pub mod analytics_bridge;
+#[cfg(feature = "db")]
+pub mod db_bridge;
+#[cfg(feature = "cache")]
+pub mod cache_bridge;
 
 /// Version
 pub const VERSION: &str = "0.2.1-ultra-fried";

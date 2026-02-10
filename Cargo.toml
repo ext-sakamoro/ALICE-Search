@@ -15,10 +15,14 @@ std = ["alloc"]
 alloc = []
 text = ["dep:alice-text", "std"]         # ALICE-Text compressed text search
 analytics = ["dep:alice-analytics", "std"]  # ALICE-Analytics search query metrics
+db = ["dep:alice-db", "std"]  # ALICE-DB search metrics persistence
+cache = ["dep:alice-cache", "std"]  # ALICE-Cache search result caching
 
 [dependencies]
 alice-text = { path = "../ALICE-Text", optional = true }
 alice-analytics = { path = "../ALICE-Analytics", optional = true, default-features = false, features = ["std"] }
+alice-db = { path = "../ALICE-DB", optional = true, default-features = false }
+alice-cache = { path = "../ALICE-Cache", optional = true }
 
 [dev-dependencies]
 criterion = "0.5"
