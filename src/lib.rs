@@ -14,12 +14,10 @@
 //!
 //! | Operation | Time | Space |
 //! |-----------|------|-------|
-//! | Build | O(N log² N)* | O(N × 1.125) |
+//! | Build | **O(N)** (SA-IS) | O(N × 1.125) |
 //! | Count | **O(M)** | O(1) |
 //! | Locate | O(M + occ × step) | **O(1)** (iterator) |
 //! | Contains | **O(M)** | O(1) |
-//!
-//! *Use SA-IS algorithm for O(N) construction
 //!
 //! ## Example
 //!

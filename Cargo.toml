@@ -8,6 +8,7 @@ license = "AGPL-3.0"
 repository = "https://github.com/ext-sakamoro/ALICE-Search"
 keywords = ["search", "fm-index", "bwt", "compression", "alice"]
 categories = ["algorithms", "compression", "text-processing"]
+publish = false
 
 [features]
 default = ["std"]
