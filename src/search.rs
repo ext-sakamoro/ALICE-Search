@@ -101,7 +101,7 @@ impl AliceIndex {
     /// let index = AliceIndex::build(b"abracadabra", 4);
     /// assert_eq!(index.count(b"abra"), 2);
     /// ```
-    #[inline]
+    #[inline(always)]
     pub fn count(&self, pattern: &[u8]) -> usize {
         let range = self.backward_search(pattern);
         range.end - range.start
@@ -123,8 +123,8 @@ impl AliceIndex {
     /// let positions: Vec<_> = index.locate(b"abra").collect();
     /// assert_eq!(positions.len(), 2);
     /// ```
-    #[inline]
-    pub fn locate<'a>(&'a self, pattern: &[u8]) -> LocateIter<'a> {
+    #[inline(always)]
+    pub fn locate<'a>(&'a self, pattern: &'a [u8]) -> LocateIter<'a> {
         let range = self.backward_search(pattern);
         LocateIter { index: self, range }
     }
@@ -137,7 +137,7 @@ impl AliceIndex {
     }
 
     /// Check if pattern exists in text
-    #[inline]
+    #[inline(always)]
     pub fn contains(&self, pattern: &[u8]) -> bool {
         !self.backward_search(pattern).is_empty()
     }
@@ -145,7 +145,7 @@ impl AliceIndex {
     /// Get the range in suffix array for a pattern
     ///
     /// Useful for advanced operations
-    #[inline]
+    #[inline(always)]
     pub fn search_range(&self, pattern: &[u8]) -> Range<usize> {
         self.backward_search(pattern)
     }
@@ -247,7 +247,8 @@ impl AliceIndex {
         if text_len == 0 {
             return 0.0;
         }
-        self.size_bytes() as f64 / text_len as f64
+        let inv_len = 1.0 / text_len as f64;
+        self.size_bytes() as f64 * inv_len
     }
 }
 
