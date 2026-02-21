@@ -129,7 +129,7 @@ fn bucket_tails(bkt: &[usize]) -> Vec<usize> {
 }
 
 /// Step 3 — scatter LMS suffixes into the tails of their buckets.
-fn place_lms(s: &[u32], sa: &mut [usize], tail: &mut Vec<usize>, is_s: &[bool]) {
+fn place_lms(s: &[u32], sa: &mut [usize], tail: &mut [usize], is_s: &[bool]) {
     // Sentinel marker: usize::MAX means "empty".
     sa.fill(usize::MAX);
     for i in (0..s.len()).rev() {
@@ -143,7 +143,7 @@ fn place_lms(s: &[u32], sa: &mut [usize], tail: &mut Vec<usize>, is_s: &[bool]) 
 }
 
 /// Step 4 — induced-sort L-type suffixes left-to-right.
-fn induce_l(s: &[u32], sa: &mut [usize], head: &mut Vec<usize>, is_s: &[bool]) {
+fn induce_l(s: &[u32], sa: &mut [usize], head: &mut [usize], is_s: &[bool]) {
     let n = s.len();
     for i in 0..n {
         if sa[i] == usize::MAX {
@@ -164,7 +164,7 @@ fn induce_l(s: &[u32], sa: &mut [usize], head: &mut Vec<usize>, is_s: &[bool]) {
 }
 
 /// Step 5 — induced-sort S-type suffixes right-to-left.
-fn induce_s(s: &[u32], sa: &mut [usize], tail: &mut Vec<usize>, is_s: &[bool]) {
+fn induce_s(s: &[u32], sa: &mut [usize], tail: &mut [usize], is_s: &[bool]) {
     let n = s.len();
     for i in (0..n).rev() {
         if sa[i] == usize::MAX {

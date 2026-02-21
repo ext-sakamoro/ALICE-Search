@@ -65,7 +65,7 @@ impl BitVector {
         }
 
         let mut sum = 0usize;
-        let num_blocks = (self.len + BLOCK_BITS - 1) / BLOCK_BITS;
+        let num_blocks = self.len.div_ceil(BLOCK_BITS);
 
         for b in 0..num_blocks {
             let base = b * BLOCK_STRIDE;
@@ -79,7 +79,7 @@ impl BitVector {
             } else {
                 BLOCK_BITS
             };
-            let words_in_block = (bits_in_block + 63) / 64;
+            let words_in_block = bits_in_block.div_ceil(64);
 
             for w in 0..words_in_block {
                 sum += self.data[base + 1 + w].count_ones() as usize;
