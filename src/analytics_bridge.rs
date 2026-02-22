@@ -35,14 +35,24 @@ impl SearchMetrics {
         self.total += 1;
     }
 
-    pub fn unique_query_count(&self) -> f64 { self.unique_queries.cardinality() }
-    pub fn p99_latency(&self) -> f64 { self.latency.quantile(0.99) }
-    pub fn p50_latency(&self) -> f64 { self.latency.quantile(0.50) }
-    pub fn pattern_frequency(&self, pattern: &[u8]) -> u64 { self.pattern_freq.estimate_bytes(pattern) }
+    pub fn unique_query_count(&self) -> f64 {
+        self.unique_queries.cardinality()
+    }
+    pub fn p99_latency(&self) -> f64 {
+        self.latency.quantile(0.99)
+    }
+    pub fn p50_latency(&self) -> f64 {
+        self.latency.quantile(0.50)
+    }
+    pub fn pattern_frequency(&self, pattern: &[u8]) -> u64 {
+        self.pattern_freq.estimate_bytes(pattern)
+    }
 }
 
 impl Default for SearchMetrics {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[cfg(test)]

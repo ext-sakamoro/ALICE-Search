@@ -7,7 +7,7 @@
 //!
 //! **Core Algorithm**: Backward Search
 //! - Process pattern from right to left
-//! - Use LF-mapping: new_pos = C[c] + Rank(c, old_pos)
+//! - Use LF-mapping: `new_pos = C[c] + Rank(c, old_pos)`
 //! - Complexity: O(M) where M = pattern length
 //!
 //! This is independent of text size N. Mathematical victory.

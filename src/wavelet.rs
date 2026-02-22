@@ -7,8 +7,8 @@
 //! Space: N bytes + 12.5% overhead per layer.
 
 extern crate alloc;
-use alloc::vec;
 use crate::bitvec::BitVector;
+use alloc::vec;
 
 /// 8 layers for 8-bit characters (u8)
 const LAYERS: usize = 8;
@@ -34,7 +34,11 @@ impl WaveletMatrix {
         let mut zeros = [0usize; LAYERS];
 
         if n == 0 {
-            return Self { layers, zeros, len: 0 };
+            return Self {
+                layers,
+                zeros,
+                len: 0,
+            };
         }
 
         // Ping-Pong buffers: only 2 allocations for entire build
@@ -78,7 +82,11 @@ impl WaveletMatrix {
             core::mem::swap(&mut current, &mut next);
         }
 
-        Self { layers, zeros, len: n }
+        Self {
+            layers,
+            zeros,
+            len: n,
+        }
     }
 
     /// Get character at position i

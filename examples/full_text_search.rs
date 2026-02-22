@@ -30,7 +30,10 @@ fn main() {
         let positions = index.locate_all(query.as_bytes());
 
         if count > 0 {
-            println!("  \"{}\" -> {} occurrences at positions {:?}", query, count, positions);
+            println!(
+                "  \"{}\" -> {} occurrences at positions {:?}",
+                query, count, positions
+            );
         } else {
             println!("  \"{}\" -> not found", query);
         }
@@ -38,9 +41,18 @@ fn main() {
 
     // Demonstrate O(m) complexity (independent of text size)
     println!("\n--- Complexity Demo ---\n");
-    println!("  count(\"fox\")        = {} (O(3) operations)", index.count(b"fox"));
-    println!("  count(\"quick brown\") = {} (O(11) operations)", index.count(b"quick brown"));
-    println!("  contains(\"cat\")     = {} (O(3) operations)", index.contains(b"cat"));
+    println!(
+        "  count(\"fox\")        = {} (O(3) operations)",
+        index.count(b"fox")
+    );
+    println!(
+        "  count(\"quick brown\") = {} (O(11) operations)",
+        index.count(b"quick brown")
+    );
+    println!(
+        "  contains(\"cat\")     = {} (O(3) operations)",
+        index.contains(b"cat")
+    );
     println!("\n  Query time is O(pattern_length), independent of corpus size.");
 
     // Iterator-based locate (zero allocation)

@@ -1,11 +1,28 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
 use alice_search::AliceIndex;
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 
 fn generate_text(size: usize) -> Vec<u8> {
     let words = [
-        "the ", "quick ", "brown ", "fox ", "jumps ", "over ", "lazy ", "dog ",
-        "alice ", "bob ", "server ", "request ", "response ", "error ", "data ",
-        "cache ", "index ", "search ", "query ", "result ",
+        "the ",
+        "quick ",
+        "brown ",
+        "fox ",
+        "jumps ",
+        "over ",
+        "lazy ",
+        "dog ",
+        "alice ",
+        "bob ",
+        "server ",
+        "request ",
+        "response ",
+        "error ",
+        "data ",
+        "cache ",
+        "index ",
+        "search ",
+        "query ",
+        "result ",
     ];
     let mut text = Vec::with_capacity(size);
     let mut i = 0;
@@ -23,13 +40,9 @@ fn bench_build_index(c: &mut Criterion) {
 
     for size in [1_000, 10_000, 50_000] {
         let text = generate_text(size);
-        group.bench_with_input(
-            BenchmarkId::new("bytes", size),
-            &text,
-            |b, text| {
-                b.iter(|| AliceIndex::build(black_box(text), 4))
-            },
-        );
+        group.bench_with_input(BenchmarkId::new("bytes", size), &text, |b, text| {
+            b.iter(|| AliceIndex::build(black_box(text), 4))
+        });
     }
     group.finish();
 }
@@ -44,9 +57,7 @@ fn bench_count(c: &mut Criterion) {
         group.bench_with_input(
             BenchmarkId::new("pattern", pattern),
             pattern.as_bytes(),
-            |b, pat| {
-                b.iter(|| index.count(black_box(pat)))
-            },
+            |b, pat| b.iter(|| index.count(black_box(pat))),
         );
     }
     group.finish();

@@ -297,9 +297,7 @@ fn sais(s: &[u32], sa: &mut [usize], alpha: usize) {
 
     // Build reduced string s1: LMS positions in *text order* (left to right),
     // values = their compact names.
-    let lms_positions_textorder: Vec<usize> = (0..n)
-        .filter(|&i| is_lms(&is_s, i))
-        .collect();
+    let lms_positions_textorder: Vec<usize> = (0..n).filter(|&i| is_lms(&is_s, i)).collect();
     // lms_positions_textorder is already in ascending order.
 
     let s1: Vec<u32> = lms_positions_textorder
