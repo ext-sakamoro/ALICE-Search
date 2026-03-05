@@ -21,7 +21,7 @@ pub struct BitVector {
 
 impl BitVector {
     #[must_use]
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             data: Vec::new(),
             len: 0,
@@ -178,13 +178,13 @@ impl BitVector {
 
     #[inline]
     #[must_use]
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.len
     }
 
     #[inline]
     #[must_use]
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.len == 0
     }
 }
@@ -288,5 +288,124 @@ mod tests {
 
         // Rank at 512 should be 256 (half are 1s)
         assert_eq!(bv.rank1(512), 256);
+    }
+
+    #[test]
+    fn test_empty_bitvector() {
+        let mut bv = BitVector::new();
+        bv.build_index();
+
+        assert!(bv.is_empty());
+        assert_eq!(bv.len(), 0);
+        assert_eq!(bv.rank1(0), 0);
+        assert_eq!(bv.rank0(0), 0);
+    }
+
+    #[test]
+    fn test_all_zeros() {
+        let mut bv = BitVector::new();
+        for _ in 0..64 {
+            bv.push(false);
+        }
+        bv.build_index();
+
+        assert_eq!(bv.rank1(64), 0);
+        assert_eq!(bv.rank0(64), 64);
+        for i in 0..64 {
+            assert!(!bv.get(i));
+        }
+    }
+
+    #[test]
+    fn test_all_ones() {
+        let mut bv = BitVector::new();
+        for _ in 0..64 {
+            bv.push(true);
+        }
+        bv.build_index();
+
+        assert_eq!(bv.rank1(64), 64);
+        assert_eq!(bv.rank0(64), 0);
+        for i in 0..64 {
+            assert!(bv.get(i));
+        }
+    }
+
+    #[test]
+    fn test_single_bit_true() {
+        let mut bv = BitVector::new();
+        bv.push(true);
+        bv.build_index();
+
+        assert_eq!(bv.len(), 1);
+        assert!(bv.get(0));
+        assert_eq!(bv.rank1(1), 1);
+        assert_eq!(bv.rank0(1), 0);
+    }
+
+    #[test]
+    fn test_single_bit_false() {
+        let mut bv = BitVector::new();
+        bv.push(false);
+        bv.build_index();
+
+        assert_eq!(bv.len(), 1);
+        assert!(!bv.get(0));
+        assert_eq!(bv.rank1(1), 0);
+        assert_eq!(bv.rank0(1), 1);
+    }
+
+    #[test]
+    fn test_rank_generic() {
+        let mut bv = BitVector::new();
+        for i in 0..8 {
+            bv.push(i % 2 == 0);
+        }
+        bv.build_index();
+
+        assert_eq!(bv.rank(true, 4), bv.rank1(4));
+        assert_eq!(bv.rank(false, 4), bv.rank0(4));
+    }
+
+    #[test]
+    fn test_three_blocks() {
+        let mut bv = BitVector::new();
+        // 3ブロック = 1536ビット
+        for i in 0..1536 {
+            bv.push(i % 4 == 0); // 4ビットに1つ
+        }
+        bv.build_index();
+
+        // 1536 / 4 = 384個の1
+        assert_eq!(bv.rank1(1536), 384);
+        // 1ブロック目境界: 512 / 4 = 128個
+        assert_eq!(bv.rank1(512), 128);
+        // 2ブロック目境界: 1024 / 4 = 256個
+        assert_eq!(bv.rank1(1024), 256);
+    }
+
+    #[test]
+    fn test_is_empty_after_push() {
+        let mut bv = BitVector::new();
+        assert!(bv.is_empty());
+        bv.push(false);
+        assert!(!bv.is_empty());
+    }
+
+    #[test]
+    fn test_rank0_complement_of_rank1() {
+        let mut bv = BitVector::new();
+        for i in 0..100 {
+            bv.push(i % 3 != 0);
+        }
+        bv.build_index();
+
+        for i in 0..=100 {
+            assert_eq!(
+                bv.rank0(i) + bv.rank1(i),
+                i,
+                "rank0 + rank1 != i at position {i}"
+            );
+        }
     }
 }

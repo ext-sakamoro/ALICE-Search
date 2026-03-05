@@ -97,4 +97,41 @@ mod tests {
         assert_eq!(fnv1a(b"test"), fnv1a(b"test"));
         assert_ne!(fnv1a(b"test"), fnv1a(b"tset"));
     }
+
+    #[test]
+    fn test_cache_empty_pattern() {
+        let cache = SearchCache::new(16);
+        cache.put(b"", vec![0, 5, 10]);
+        let result = cache.get(b"").unwrap();
+        assert_eq!(result.count, 3);
+        assert_eq!(result.positions, vec![0, 5, 10]);
+    }
+
+    #[test]
+    fn test_cache_overwrite() {
+        // 同じパターンを2度putした場合は上書きされる
+        let cache = SearchCache::new(16);
+        cache.put(b"hello", vec![1, 2]);
+        cache.put(b"hello", vec![10, 20, 30]);
+        let result = cache.get(b"hello").unwrap();
+        assert_eq!(result.count, 3);
+    }
+
+    #[test]
+    fn test_cache_len_and_is_empty() {
+        let cache = SearchCache::new(64);
+        assert!(cache.is_empty());
+        assert_eq!(cache.len(), 0);
+
+        cache.put(b"abc", vec![0]);
+        assert!(!cache.is_empty());
+        assert_eq!(cache.len(), 1);
+    }
+
+    #[test]
+    fn test_fnv1a_empty() {
+        // 空スライスは FNV オフセット基底値
+        let h = fnv1a(b"");
+        assert_eq!(h, 0xcbf29ce484222325u64);
+    }
 }

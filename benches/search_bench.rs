@@ -41,7 +41,7 @@ fn bench_build_index(c: &mut Criterion) {
     for size in [1_000, 10_000, 50_000] {
         let text = generate_text(size);
         group.bench_with_input(BenchmarkId::new("bytes", size), &text, |b, text| {
-            b.iter(|| AliceIndex::build(black_box(text), 4))
+            b.iter(|| AliceIndex::build(black_box(text), 4));
         });
     }
     group.finish();
@@ -68,11 +68,11 @@ fn bench_contains(c: &mut Criterion) {
     let index = AliceIndex::build(&text, 4);
 
     c.bench_function("contains_hit", |b| {
-        b.iter(|| index.contains(black_box(b"fox")))
+        b.iter(|| index.contains(black_box(b"fox")));
     });
 
     c.bench_function("contains_miss", |b| {
-        b.iter(|| index.contains(black_box(b"zzzzz")))
+        b.iter(|| index.contains(black_box(b"zzzzz")));
     });
 }
 
@@ -84,14 +84,14 @@ fn bench_locate(c: &mut Criterion) {
         b.iter(|| {
             let positions = index.locate_all(black_box(b"fox"));
             black_box(positions.len())
-        })
+        });
     });
 
     c.bench_function("locate_iter_first_10", |b| {
         b.iter(|| {
             let count = index.locate(black_box(b"the")).take(10).count();
             black_box(count)
-        })
+        });
     });
 }
 

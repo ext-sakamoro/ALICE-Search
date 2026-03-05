@@ -32,6 +32,7 @@ alice-cache = { path = "../ALICE-Cache", optional = true }
 
 [dev-dependencies]
 criterion = "0.5"
+tempfile = "3"
 
 [[bench]]
 name = "search_bench"

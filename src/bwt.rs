@@ -463,8 +463,7 @@ mod tests {
             assert_eq!(
                 build_suffix_array(t),
                 naive_suffix_array(t),
-                "mismatch on {:?}",
-                text
+                "mismatch on {text:?}"
             );
         }
     }
@@ -554,7 +553,7 @@ mod tests {
         for len in [0usize, 1, 2, 3, 7, 10, 50] {
             let text: Vec<u8> = (0..len).map(|i| (i % 26 + b'a' as usize) as u8).collect();
             let sa = build_suffix_array(&text);
-            assert_eq!(sa.len(), len + 1, "SA length wrong for n={}", len);
+            assert_eq!(sa.len(), len + 1, "SA length wrong for n={len}");
         }
     }
 
@@ -566,7 +565,7 @@ mod tests {
         let sa = build_suffix_array(text);
         let mut seen = vec![false; n + 1];
         for &v in &sa {
-            assert!(!seen[v], "duplicate SA entry {}", v);
+            assert!(!seen[v], "duplicate SA entry {v}");
             seen[v] = true;
         }
         assert!(seen.iter().all(|&s| s), "SA is not a permutation of 0..=n");
@@ -613,7 +612,7 @@ mod tests {
         assert_eq!(bwt.len(), text.len() + 1);
         assert!(bwt.contains(&SENTINEL));
         // The sentinel must appear exactly once.
-        assert_eq!(bwt.iter().filter(|&&c| c == SENTINEL).count(), 1);
+        assert_eq!(bwt.iter().copied().filter(|&c| c == SENTINEL).count(), 1);
     }
 
     // ------------------------------------------------------------------
@@ -633,7 +632,133 @@ mod tests {
         assert_eq!(c_table[b'b' as usize], 4);
         // Everything from 'c' onward should equal 5 (total length).
         for c in b'c'..=255u8 {
-            assert_eq!(c_table[c as usize], 5, "C[{}] wrong", c);
+            assert_eq!(c_table[c as usize], 5, "C[{c}] wrong");
+        }
+    }
+
+    #[test]
+    fn test_sais_matches_naive_long_repeat() {
+        // 長い繰り返しパターン
+        let text = b"abcabcabcabc";
+        assert_eq!(build_suffix_array(text), naive_suffix_array(text));
+    }
+
+    #[test]
+    fn test_sais_matches_naive_descending() {
+        let text = b"zyxwvutsrqponmlkjihgfedcba";
+        assert_eq!(build_suffix_array(text), naive_suffix_array(text));
+    }
+
+    #[test]
+    fn test_sais_matches_naive_fibonacci_like() {
+        // フィボナッチ文字列（LMS衝突が多発しやすい）
+        let text = b"abaababaabaab";
+        assert_eq!(build_suffix_array(text), naive_suffix_array(text));
+    }
+
+    #[test]
+    fn test_sa_sorted_order() {
+        // SAが正しくソートされているか確認
+        let text = b"banana";
+        let n = text.len();
+        let sa = build_suffix_array(text);
+
+        for i in 1..sa.len() {
+            let a = sa[i - 1];
+            let b = sa[i];
+            let s1 = if a <= n { &text[a.min(n)..] } else { &[][..] };
+            let s2 = if b <= n { &text[b.min(n)..] } else { &[][..] };
+            assert!(s1 <= s2, "SA not sorted at [{}, {}]", i - 1, i);
+        }
+    }
+
+    #[test]
+    fn test_bwt_single_char() {
+        let text = b"a";
+        let sa = build_suffix_array(text);
+        let bwt = build_bwt(text, &sa);
+
+        // "a\0" -> SA=[1,0], BWT=[a, SENTINEL]
+        assert_eq!(bwt.len(), 2);
+        assert!(bwt.contains(&SENTINEL));
+    }
+
+    #[test]
+    fn test_c_table_single_char() {
+        // BWT が SENTINEL 1個と 'z' 1個の場合
+        let bwt = vec![SENTINEL, b'z'];
+        let c_table = build_c_table(&bwt);
+
+        assert_eq!(c_table[SENTINEL as usize], 0);
+        assert_eq!(c_table[b'z' as usize], 1);
+        // 'z'+1 以降は全てテキスト長 (2)
+        for c in (b'z' + 1)..=255u8 {
+            assert_eq!(c_table[c as usize], 2, "C[{c}] should be 2");
+        }
+    }
+
+    #[test]
+    fn test_c_table_abracadabra() {
+        // "abracadabra" の BWT を構築し C-table を手計算値で検証する。
+        // 文字頻度: SENTINEL=1, a=5, b=2, c=1, d=1, r=2
+        // C[SENTINEL]=0, C['a']=1, C['b']=6, C['c']=8, C['d']=9, C['r']=10
+        // C[それ以降]=12 (テキスト長 + 1 = 12)
+        let text = b"abracadabra";
+        let sa = build_suffix_array(text);
+        let bwt = build_bwt(text, &sa);
+        let c_table = build_c_table(&bwt);
+
+        assert_eq!(c_table[SENTINEL as usize], 0);
+        assert_eq!(c_table[b'a' as usize], 1);
+        assert_eq!(c_table[b'b' as usize], 6);
+        assert_eq!(c_table[b'c' as usize], 8);
+        assert_eq!(c_table[b'd' as usize], 9);
+        assert_eq!(c_table[b'r' as usize], 10);
+        // 'r' より大きい文字は全て累積値 12 になる
+        for c in (b'r' + 1)..=255u8 {
+            assert_eq!(c_table[c as usize], 12, "C[{c}] should be 12");
+        }
+    }
+
+    #[test]
+    #[allow(clippy::naive_bytecount)]
+    fn test_bwt_all_same_chars() {
+        // 全て同じ文字の BWT: テキスト "aaa" の場合
+        // SA = [3, 2, 1, 0], BWT[i] = text[SA[i]-1]
+        // SA[0]=3 -> SENTINEL, SA[1]=2 -> text[1]='a', ...
+        // BWT = [SENTINEL, 'a', 'a', 'a']
+        let text = b"aaa";
+        let sa = build_suffix_array(text);
+        let bwt = build_bwt(text, &sa);
+
+        assert_eq!(bwt.len(), text.len() + 1);
+        // SENTINEL は必ず 1 個だけ存在する
+        assert_eq!(bwt.iter().filter(|&&c| c == SENTINEL).count(), 1);
+        // 残りは全て 'a'
+        assert_eq!(bwt.iter().filter(|&&c| c == b'a').count(), text.len());
+    }
+
+    #[test]
+    fn test_sais_matches_naive_high_bytes() {
+        // 高バイト値 (0x80 以上) を含む入力で SA-IS と naive が一致することを確認する。
+        // SENTINEL(0x00) と衝突しないよう 0x01 以上の値を使用する。
+        let text: Vec<u8> = vec![0x80, 0xFF, 0x81, 0xFE, 0x80, 0xFF];
+        assert_eq!(build_suffix_array(&text), naive_suffix_array(&text));
+    }
+
+    #[test]
+    fn test_sa_first_entry_is_sentinel_position() {
+        // SA[0] は常に text.len()（仮想センチネルの位置）でなければならない。
+        // これは SA-IS の不変条件: センチネルは辞書順で最小。
+        for text in &[
+            b"a" as &[u8],
+            b"banana",
+            b"mississippi",
+            b"abracadabra",
+            b"zzzzzz",
+        ] {
+            let sa = build_suffix_array(text);
+            assert_eq!(sa[0], text.len(), "SA[0] should be text.len() for {text:?}");
         }
     }
 }

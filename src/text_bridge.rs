@@ -18,7 +18,7 @@ impl CompressedSearchIndex {
     /// Decompresses the text, then builds the search index.
     /// The compressed bytes can be discarded after building.
     pub fn from_compressed(compressed: &[u8], sa_sample_rate: usize) -> Result<Self, String> {
-        let mut alice = ALICEText::new(EncodingMode::Pattern);
+        let alice = ALICEText::new(EncodingMode::Pattern);
         let text = alice.decompress(compressed).map_err(|e| format!("{}", e))?;
         let bytes = text.as_bytes();
         let index = AliceIndex::build(bytes, sa_sample_rate);
@@ -51,7 +51,7 @@ impl CompressedSearchIndex {
     }
 
     /// Locate all pattern occurrences (zero-allocation iterator).
-    pub fn locate(&self, pattern: &[u8]) -> impl Iterator<Item = usize> + '_ {
+    pub fn locate<'a>(&'a self, pattern: &'a [u8]) -> impl Iterator<Item = usize> + 'a {
         self.index.locate(pattern)
     }
 
@@ -72,6 +72,13 @@ mod tests {
         assert_eq!(idx.count(b"INFO"), 2);
         assert!(idx.contains(b"logged"));
         assert!(!idx.contains(b"ERROR"));
-        assert!(compressed.len() > 0);
+        assert!(!compressed.is_empty());
+    }
+
+    #[test]
+    fn test_text_len_preserved() {
+        let text = "hello world";
+        let (idx, _) = CompressedSearchIndex::from_text(text, 4);
+        assert_eq!(idx.text_len(), text.len());
     }
 }

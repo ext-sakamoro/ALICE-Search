@@ -76,4 +76,17 @@ mod tests {
         let latencies = sink.query_latency(0, 20_000).unwrap();
         assert!(!latencies.is_empty());
     }
+
+    #[test]
+    fn test_query_results_scan() {
+        let dir = tempdir().unwrap();
+        let sink = SearchMetricsSink::open(dir.path()).unwrap();
+
+        sink.record_query(1000, 5.0, 100.0).unwrap();
+        sink.record_query(2000, 10.0, 200.0).unwrap();
+        sink.flush().unwrap();
+
+        let results = sink.query_results(0, 3000).unwrap();
+        assert_eq!(results.len(), 2);
+    }
 }

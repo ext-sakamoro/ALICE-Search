@@ -82,7 +82,7 @@ impl AliceIndex {
         }
         sa_sampled_bits.build_index();
 
-        AliceIndex {
+        Self {
             wm,
             c_table,
             sample_step,
@@ -217,7 +217,7 @@ impl AliceIndex {
 
     /// Index size in bytes (approximate)
     #[must_use]
-    pub fn size_bytes(&self) -> usize {
+    pub const fn size_bytes(&self) -> usize {
         let n = self.wm.len();
 
         // WM: 8 layers × (N/8 bytes for data + N/64 × 8 bytes for blocks)
@@ -240,13 +240,13 @@ impl AliceIndex {
     /// Get the SA sampling step
     #[inline]
     #[must_use]
-    pub fn sample_step(&self) -> usize {
+    pub const fn sample_step(&self) -> usize {
         self.sample_step
     }
 
     /// Original text length (excluding sentinel)
     #[must_use]
-    pub fn text_len(&self) -> usize {
+    pub const fn text_len(&self) -> usize {
         self.wm.len().saturating_sub(1)
     }
 
@@ -341,7 +341,7 @@ mod tests {
 
         // Use iterator (zero allocation)
         let mut positions: Vec<_> = index.locate(b"abra").collect();
-        positions.sort();
+        positions.sort_unstable();
 
         assert_eq!(positions.len(), 2);
         assert_eq!(positions, vec![0, 7]);
@@ -353,7 +353,7 @@ mod tests {
         let index = AliceIndex::build(text, 1);
 
         let mut positions = index.locate_all(b"abra");
-        positions.sort();
+        positions.sort_unstable();
 
         assert_eq!(positions.len(), 2);
         assert!(positions.contains(&0));
@@ -397,5 +397,203 @@ mod tests {
         assert_eq!(index.count(b"the"), 200);
         assert_eq!(index.count(b"fox"), 100);
         assert_eq!(index.count(b"xyz"), 0);
+    }
+
+    #[test]
+    fn test_empty_text() {
+        // 空テキストのインデックス構築
+        let index = AliceIndex::build(b"", 4);
+
+        assert_eq!(index.count(b"a"), 0);
+        assert_eq!(index.count(b""), 1); // センチネルのみ
+        assert!(!index.contains(b"a"));
+        assert_eq!(index.text_len(), 0);
+    }
+
+    #[test]
+    fn test_single_char_text() {
+        let index = AliceIndex::build(b"a", 1);
+
+        assert_eq!(index.count(b"a"), 1);
+        assert_eq!(index.count(b"b"), 0);
+        assert_eq!(index.text_len(), 1);
+        assert!(index.contains(b"a"));
+    }
+
+    #[test]
+    fn test_pattern_longer_than_text() {
+        let index = AliceIndex::build(b"hi", 1);
+
+        assert_eq!(index.count(b"hello"), 0);
+        assert!(!index.contains(b"hello"));
+    }
+
+    #[test]
+    fn test_locate_empty_pattern_returns_all() {
+        let text = b"abc";
+        let index = AliceIndex::build(text, 1);
+
+        // 空パターンはテキスト長+1を返す（センチネル含む）
+        assert_eq!(index.count(b""), text.len() + 1);
+    }
+
+    #[test]
+    fn test_search_range_not_found() {
+        let index = AliceIndex::build(b"hello", 4);
+        let range = index.search_range(b"xyz");
+        assert!(range.is_empty());
+    }
+
+    #[test]
+    fn test_search_range_found() {
+        let index = AliceIndex::build(b"abracadabra", 4);
+        let range = index.search_range(b"abra");
+        assert_eq!(range.end - range.start, 2);
+    }
+
+    #[test]
+    fn test_text_len() {
+        let text = b"hello world";
+        let index = AliceIndex::build(text, 4);
+        assert_eq!(index.text_len(), text.len());
+    }
+
+    #[test]
+    fn test_sample_step_respected() {
+        let index = AliceIndex::build(b"abracadabra", 8);
+        assert_eq!(index.sample_step(), 8);
+
+        let index2 = AliceIndex::build(b"abracadabra", 1);
+        assert_eq!(index2.sample_step(), 1);
+    }
+
+    #[test]
+    fn test_sample_step_zero_clamped_to_one() {
+        // sample_step=0 は 1 にクランプされる
+        let index = AliceIndex::build(b"abracadabra", 0);
+        assert_eq!(index.sample_step(), 1);
+    }
+
+    #[test]
+    fn test_locate_single_occurrence() {
+        let index = AliceIndex::build(b"hello world", 1);
+        let mut positions = index.locate_all(b"world");
+        positions.sort_unstable();
+        assert_eq!(positions, vec![6]);
+    }
+
+    #[test]
+    fn test_locate_no_occurrence() {
+        let index = AliceIndex::build(b"hello world", 1);
+        let positions = index.locate_all(b"xyz");
+        assert!(positions.is_empty());
+    }
+
+    #[test]
+    fn test_exact_size_iterator_empty_result() {
+        let index = AliceIndex::build(b"hello", 1);
+        let iter = index.locate(b"xyz");
+        assert_eq!(iter.len(), 0);
+    }
+
+    #[test]
+    fn test_size_bytes_nonzero() {
+        let index = AliceIndex::build(b"abracadabra", 4);
+        assert!(index.size_bytes() > 0);
+    }
+
+    #[test]
+    #[allow(clippy::float_cmp)]
+    fn test_compression_ratio_empty() {
+        let index = AliceIndex::build(b"", 4);
+        assert_eq!(index.compression_ratio(), 0.0);
+    }
+
+    #[test]
+    fn test_binary_data() {
+        // バイナリデータ（0x00を除く）の検索
+        let text: Vec<u8> = (1u8..=50).collect();
+        let index = AliceIndex::build(&text, 4);
+
+        // バイト値 0x01 は1回だけ出現
+        assert_eq!(index.count(&[0x01]), 1);
+        // バイト値 0x31 は1回だけ出現
+        assert_eq!(index.count(&[0x31]), 1);
+    }
+
+    #[test]
+    fn test_locate_iter_size_hint_decrements() {
+        // イテレータを消費するたびに size_hint の上限が 1 ずつ減少することを確認する。
+        // ExactSizeIterator の契約: len() == remaining items。
+        let index = AliceIndex::build(b"abracadabra", 1);
+        let mut iter = index.locate(b"a"); // 5箇所マッチ
+
+        assert_eq!(iter.len(), 5);
+        iter.next();
+        assert_eq!(iter.len(), 4);
+        iter.next();
+        assert_eq!(iter.len(), 3);
+        // 残り3件を消費して exhausted 状態
+        iter.next();
+        iter.next();
+        iter.next();
+        assert_eq!(iter.len(), 0);
+        assert!(iter.next().is_none());
+    }
+
+    #[test]
+    fn test_count_overlapping_pattern() {
+        // "aaaa" の中に "aa" は 3 回重複して出現する (位置 0, 1, 2)。
+        // FM-Index の count は重複を正しく数えなければならない。
+        let text = b"aaaa";
+        let index = AliceIndex::build(text, 1);
+
+        assert_eq!(index.count(b"aa"), 3);
+        assert_eq!(index.count(b"aaa"), 2);
+        assert_eq!(index.count(b"aaaa"), 1);
+
+        // locate との一致確認
+        assert_eq!(index.locate_all(b"aa").len(), 3);
+    }
+
+    #[test]
+    fn test_search_range_empty_pattern_covers_all() {
+        // 空パターンの search_range は [0, wm.len()) = [0, text.len()+1) を返す。
+        // これは「全サフィックスが空文字列で始まる」という FM-Index の定義通り。
+        let text = b"hello";
+        let index = AliceIndex::build(text, 4);
+        let range = index.search_range(b"");
+
+        assert_eq!(range.start, 0);
+        assert_eq!(range.end, text.len() + 1); // センチネル込み
+        assert_eq!(range.end - range.start, index.count(b""));
+    }
+
+    #[test]
+    fn test_sample_step_variants_give_same_locate() {
+        // sample_step が異なっても locate 結果は同一でなければならない。
+        // sample_step はメモリと速度のトレードオフで、正確性には影響しない。
+        let text = b"mississippi";
+        let pattern = b"issi";
+
+        let mut results: Vec<Vec<usize>> = Vec::new();
+        for &step in &[1usize, 2, 4, 8] {
+            let index = AliceIndex::build(text, step);
+            let mut positions = index.locate_all(pattern);
+            positions.sort_unstable();
+            results.push(positions);
+        }
+
+        // 全 sample_step で結果が一致する
+        for i in 1..results.len() {
+            assert_eq!(
+                results[0],
+                results[i],
+                "locate mismatch between step=1 and step={}",
+                1 << i
+            );
+        }
+        // "issi" は "mississippi" に 2 回出現 (位置 1, 4)
+        assert_eq!(results[0], vec![1, 4]);
     }
 }

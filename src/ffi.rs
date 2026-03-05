@@ -272,4 +272,72 @@ mod tests {
             alice_index_locate_free(ptr::null_mut(), 0);
         }
     }
+
+    #[test]
+    fn test_build_empty_text() {
+        unsafe {
+            // text_len=0 は null を返す
+            let text = b"hello";
+            let index = alice_index_build(text.as_ptr(), 0, 4);
+            assert!(index.is_null());
+        }
+    }
+
+    #[test]
+    fn test_count_null_pattern() {
+        unsafe {
+            let text = b"abracadabra";
+            let index = alice_index_build(text.as_ptr(), text.len() as u32, 4);
+            assert!(!index.is_null());
+
+            // pattern_ptr が null の場合は 0 バイトのスライス → 空パターン
+            let count = alice_index_count(index, ptr::null(), 0);
+            // 空パターンはテキスト長+1を返す (sentinel含む)
+            assert!(count > 0);
+
+            alice_index_destroy(index);
+        }
+    }
+
+    #[test]
+    fn test_contains_true_and_false() {
+        unsafe {
+            let text = b"mississippi";
+            let index = alice_index_build(text.as_ptr(), text.len() as u32, 4);
+
+            assert_eq!(alice_index_contains(index, b"issi".as_ptr(), 4), 1);
+            assert_eq!(alice_index_contains(index, b"xyz".as_ptr(), 3), 0);
+
+            alice_index_destroy(index);
+        }
+    }
+
+    #[test]
+    fn test_text_len_and_sample_step() {
+        unsafe {
+            let text = b"hello world";
+            let index = alice_index_build(text.as_ptr(), text.len() as u32, 8);
+
+            assert_eq!(alice_index_text_len(index), text.len() as u32);
+            assert_eq!(alice_index_sample_step(index), 8);
+
+            alice_index_destroy(index);
+        }
+    }
+
+    #[test]
+    fn test_locate_multiple_occurrences() {
+        unsafe {
+            let text = b"aaaa";
+            let index = alice_index_build(text.as_ptr(), text.len() as u32, 1);
+
+            let mut len: u32 = 0;
+            let positions = alice_index_locate(index, b"a".as_ptr(), 1, &mut len);
+            assert_eq!(len, 4);
+            assert!(!positions.is_null());
+
+            alice_index_locate_free(positions, len);
+            alice_index_destroy(index);
+        }
+    }
 }

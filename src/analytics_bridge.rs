@@ -69,4 +69,25 @@ mod tests {
         assert!(m.unique_query_count() >= 1.0);
         assert_eq!(m.total, 51);
     }
+
+    #[test]
+    fn test_metrics_default() {
+        let m = SearchMetrics::default();
+        assert_eq!(m.total, 0);
+        // クエリゼロ状態では pattern_freq は 0 を返す
+        assert_eq!(m.pattern_frequency(b"any"), 0);
+    }
+
+    #[test]
+    fn test_pattern_frequency() {
+        let mut m = SearchMetrics::new();
+        m.record_query(b"rust", 50.0);
+        m.record_query(b"rust", 60.0);
+        m.record_query(b"go", 30.0);
+
+        // "rust" は2回、"go" は1回（CMS は過大評価の可能性があるため >=）
+        assert!(m.pattern_frequency(b"rust") >= 2);
+        assert!(m.pattern_frequency(b"go") >= 1);
+        assert_eq!(m.total, 3);
+    }
 }

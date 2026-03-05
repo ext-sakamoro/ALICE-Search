@@ -1,6 +1,6 @@
 //! FM-Index Full-Text Search Example
 //!
-//! Demonstrates building an index and searching in O(pattern_length).
+//! Demonstrates building an index and searching in `O(pattern_length)`.
 //!
 //! ```bash
 //! cargo run --example full_text_search
@@ -30,12 +30,9 @@ fn main() {
         let positions = index.locate_all(query.as_bytes());
 
         if count > 0 {
-            println!(
-                "  \"{}\" -> {} occurrences at positions {:?}",
-                query, count, positions
-            );
+            println!("  \"{query}\" -> {count} occurrences at positions {positions:?}");
         } else {
-            println!("  \"{}\" -> not found", query);
+            println!("  \"{query}\" -> not found");
         }
     }
 
@@ -59,7 +56,7 @@ fn main() {
     println!("\n--- Zero-Allocation Iterator ---\n");
     print!("  Positions of \"the\": ");
     for pos in index.locate(b"the") {
-        print!("{} ", pos);
+        print!("{pos} ");
     }
     println!();
 }

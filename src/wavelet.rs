@@ -137,13 +137,13 @@ impl WaveletMatrix {
 
     #[inline]
     #[must_use]
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.len
     }
 
     #[inline]
     #[must_use]
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.len == 0
     }
 }
@@ -158,7 +158,7 @@ mod tests {
         let wm = WaveletMatrix::build(text);
 
         for (i, &c) in text.iter().enumerate() {
-            assert_eq!(wm.get(i), c, "Mismatch at position {}", i);
+            assert_eq!(wm.get(i), c, "Mismatch at position {i}");
         }
     }
 
@@ -213,5 +213,103 @@ mod tests {
         for c in 0..=255u8 {
             assert_eq!(wm.rank(c, 256), 1);
         }
+    }
+
+    #[test]
+    fn test_wavelet_single_char() {
+        let text = b"x";
+        let wm = WaveletMatrix::build(text);
+
+        assert_eq!(wm.len(), 1);
+        assert!(!wm.is_empty());
+        assert_eq!(wm.get(0), b'x');
+        assert_eq!(wm.rank(b'x', 1), 1);
+        assert_eq!(wm.rank(b'a', 1), 0);
+    }
+
+    #[test]
+    fn test_wavelet_rank_at_zero() {
+        let text = b"mississippi";
+        let wm = WaveletMatrix::build(text);
+
+        // rank(c, 0) は常に 0
+        for c in [b'm', b'i', b's', b'p'] {
+            assert_eq!(wm.rank(c, 0), 0, "rank({c}, 0) should be 0");
+        }
+    }
+
+    #[test]
+    fn test_wavelet_rank_full_length() {
+        let text = b"abcabc";
+        let wm = WaveletMatrix::build(text);
+        let n = text.len();
+
+        assert_eq!(wm.rank(b'a', n), 2);
+        assert_eq!(wm.rank(b'b', n), 2);
+        assert_eq!(wm.rank(b'c', n), 2);
+        assert_eq!(wm.rank(b'd', n), 0);
+    }
+
+    #[test]
+    fn test_wavelet_get_all_positions() {
+        let text = b"hello";
+        let wm = WaveletMatrix::build(text);
+
+        // get(i) は元テキストの文字を復元できる
+        for (i, &c) in text.iter().enumerate() {
+            assert_eq!(wm.get(i), c, "get({i}) mismatch");
+        }
+    }
+
+    #[test]
+    fn test_wavelet_rank_incremental() {
+        // 'a' の出現位置: 0,1,3,6
+        let text = b"aababba";
+        let wm = WaveletMatrix::build(text);
+
+        assert_eq!(wm.rank(b'a', 0), 0);
+        assert_eq!(wm.rank(b'a', 1), 1);
+        assert_eq!(wm.rank(b'a', 2), 2);
+        assert_eq!(wm.rank(b'a', 3), 2);
+        assert_eq!(wm.rank(b'a', 4), 3);
+        assert_eq!(wm.rank(b'a', 7), 4);
+    }
+
+    #[test]
+    fn test_wavelet_len_and_is_empty() {
+        let wm_empty = WaveletMatrix::build(b"");
+        assert!(wm_empty.is_empty());
+        assert_eq!(wm_empty.len(), 0);
+
+        let wm = WaveletMatrix::build(b"abc");
+        assert!(!wm.is_empty());
+        assert_eq!(wm.len(), 3);
+    }
+
+    #[test]
+    fn test_wavelet_high_byte_values() {
+        // 高バイト値 (0x80以上) を含むデータ
+        let text: Vec<u8> = vec![0x80, 0xFF, 0x80, 0x00, 0xFF];
+        let wm = WaveletMatrix::build(&text);
+
+        assert_eq!(wm.rank(0x80, 5), 2);
+        assert_eq!(wm.rank(0xFF, 5), 2);
+        assert_eq!(wm.rank(0x00, 5), 1);
+
+        for (i, &c) in text.iter().enumerate() {
+            assert_eq!(wm.get(i), c);
+        }
+    }
+
+    #[test]
+    fn test_wavelet_rank_mississippi() {
+        let text = b"mississippi";
+        let wm = WaveletMatrix::build(text);
+        let n = text.len();
+
+        assert_eq!(wm.rank(b'm', n), 1);
+        assert_eq!(wm.rank(b'i', n), 4);
+        assert_eq!(wm.rank(b's', n), 4);
+        assert_eq!(wm.rank(b'p', n), 2);
     }
 }
