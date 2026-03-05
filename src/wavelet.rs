@@ -2,7 +2,7 @@
 //!
 //! **Zero-Allocation Build**: Uses double-buffering (ping-pong) to avoid
 //! allocating vectors during construction.
-//! **Interleaved BitVector**: Maximizes cache hits during rank queries.
+//! **Interleaved `BitVector`**: Maximizes cache hits during rank queries.
 //!
 //! Space: N bytes + 12.5% overhead per layer.
 
@@ -14,7 +14,7 @@ use alloc::vec;
 const LAYERS: usize = 8;
 
 pub struct WaveletMatrix {
-    /// BitVector for each layer (interleaved layout)
+    /// `BitVector` for each layer (interleaved layout)
     layers: [BitVector; LAYERS],
     /// Number of zeros (Z) in each layer, used for routing
     zeros: [usize; LAYERS],
@@ -28,6 +28,7 @@ impl WaveletMatrix {
     /// **Optimization**: Allocates only 2 auxiliary buffers of size N,
     /// reused across all 8 layers via `mem::swap`.
     /// No intermediate allocations during layer construction.
+    #[must_use]
     pub fn build(text: &[u8]) -> Self {
         let n = text.len();
         let mut layers: [BitVector; LAYERS] = core::array::from_fn(|_| BitVector::new());
@@ -52,7 +53,7 @@ impl WaveletMatrix {
 
             // Pass 1: Count zeros for split point
             let mut zero_count = 0;
-            for &c in current.iter() {
+            for &c in &current {
                 if (c & bit_mask) == 0 {
                     zero_count += 1;
                 }
@@ -63,7 +64,7 @@ impl WaveletMatrix {
             let mut z_ptr = 0;
             let mut o_ptr = zero_count;
 
-            for &c in current.iter() {
+            for &c in &current {
                 let bit = (c & bit_mask) != 0;
                 layer.push(bit);
 
@@ -92,6 +93,7 @@ impl WaveletMatrix {
     /// Get character at position i
     /// O(8) operations - fixed cost regardless of alphabet size
     #[inline]
+    #[must_use]
     pub fn get(&self, mut i: usize) -> u8 {
         let mut c = 0u8;
 
@@ -111,6 +113,7 @@ impl WaveletMatrix {
     /// Rank(c, i): Count occurrences of character c in [0..i)
     /// O(8) operations - independent of text size
     #[inline]
+    #[must_use]
     pub fn rank(&self, c: u8, mut i: usize) -> usize {
         let mut start = 0;
 
@@ -133,11 +136,13 @@ impl WaveletMatrix {
     }
 
     #[inline]
+    #[must_use]
     pub fn len(&self) -> usize {
         self.len
     }
 
     #[inline]
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.len == 0
     }

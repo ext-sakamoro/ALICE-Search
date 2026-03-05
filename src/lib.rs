@@ -1,3 +1,16 @@
+#![allow(
+    clippy::cast_possible_truncation,
+    clippy::cast_possible_wrap,
+    clippy::cast_precision_loss,
+    clippy::cast_sign_loss,
+    clippy::cast_lossless,
+    clippy::similar_names,
+    clippy::many_single_char_names,
+    clippy::module_name_repetitions,
+    clippy::inline_always,
+    clippy::too_many_lines
+)]
+
 //! # ALICE-Search (Ultra Optimized)
 //!
 //! **FM-Index based full-text search**
@@ -6,7 +19,7 @@
 //!
 //! ## Optimized Architecture
 //!
-//! - **Interleaved BitVector**: [Header|Body×8] layout for L1 cache locality
+//! - **Interleaved `BitVector`**: [Header|Body×8] layout for L1 cache locality
 //! - **Wavelet Matrix**: Double-buffered build (2 allocations total)
 //! - **Iterator Locate**: Zero-allocation result enumeration
 //!
@@ -45,6 +58,8 @@ extern crate alloc;
 
 pub mod bitvec;
 pub mod bwt;
+#[cfg(feature = "ffi")]
+pub mod ffi;
 pub mod search;
 pub mod wavelet;
 

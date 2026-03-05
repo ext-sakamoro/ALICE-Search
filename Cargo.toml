@@ -10,10 +10,15 @@ keywords = ["search", "fm-index", "bwt", "compression", "alice"]
 categories = ["algorithms", "compression", "text-processing"]
 publish = false
 
+[lib]
+name = "alice_search"
+crate-type = ["rlib", "cdylib"]
+
 [features]
 default = ["std"]
 std = ["alloc"]
 alloc = []
+ffi = ["std"]
 text = ["dep:alice-text", "std"]         # ALICE-Text compressed text search
 analytics = ["dep:alice-analytics", "std"]  # ALICE-Analytics search query metrics
 db = ["dep:alice-db", "std"]  # ALICE-DB search metrics persistence

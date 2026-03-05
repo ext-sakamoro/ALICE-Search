@@ -1,7 +1,7 @@
 //! FM-Index Search Implementation (Optimized)
 //!
 //! **Architecture**:
-//! - BitVector: Interleaved memory layout for cache locality
+//! - `BitVector`: Interleaved memory layout for cache locality
 //! - Wavelet Matrix: Double-buffered build (zero intermediate allocations)
 //! - Locate: Iterator-based (zero allocation for query results)
 //!
@@ -23,7 +23,7 @@ use crate::wavelet::WaveletMatrix;
 /// ALICE-Search Index (FM-Index implementation)
 ///
 /// Searching implies counting.
-/// Count(Pattern) -> O(Pattern_Length) independent of Corpus Size.
+/// Count(Pattern) -> `O(Pattern_Length)` independent of Corpus Size.
 pub struct AliceIndex {
     /// Wavelet Matrix (stores BWT + Rank support)
     wm: WaveletMatrix,
@@ -33,7 +33,7 @@ pub struct AliceIndex {
     sample_step: usize,
     /// Sampled SA values (compact)
     sa_samples: Vec<usize>,
-    /// BitVector marking sampled positions (Fast locate!)
+    /// `BitVector` marking sampled positions (Fast locate!)
     sa_sampled_bits: BitVector,
 }
 
@@ -46,7 +46,8 @@ impl AliceIndex {
     ///
     /// # Complexity
     /// - Time: O(N log^2 N) with naive SA (use SA-IS for O(N) in production)
-    /// - Space: O(N * 1.125) for WM + O(N/sample_step) for SA samples
+    /// - Space: O(N * 1.125) for WM + `O(N/sample_step)` for SA samples
+    #[must_use]
     pub fn build(text: &[u8], sample_step: usize) -> Self {
         let sample_step = sample_step.max(1);
 
@@ -102,6 +103,7 @@ impl AliceIndex {
     /// assert_eq!(index.count(b"abra"), 2);
     /// ```
     #[inline(always)]
+    #[must_use]
     pub fn count(&self, pattern: &[u8]) -> usize {
         let range = self.backward_search(pattern);
         range.end - range.start
@@ -112,7 +114,7 @@ impl AliceIndex {
     /// **Zero Allocation**: Returns a lazy iterator instead of Vec.
     ///
     /// # Complexity
-    /// - O(M + occ * sample_step) where occ = number of occurrences
+    /// - O(M + occ * `sample_step`) where occ = number of occurrences
     /// - **No heap allocation** for results
     ///
     /// # Example
@@ -124,6 +126,7 @@ impl AliceIndex {
     /// assert_eq!(positions.len(), 2);
     /// ```
     #[inline(always)]
+    #[must_use]
     pub fn locate<'a>(&'a self, pattern: &'a [u8]) -> LocateIter<'a> {
         let range = self.backward_search(pattern);
         LocateIter { index: self, range }
@@ -132,12 +135,14 @@ impl AliceIndex {
     /// Locate all positions (collecting into Vec for convenience)
     ///
     /// Use `locate()` iterator for zero-allocation queries.
+    #[must_use]
     pub fn locate_all(&self, pattern: &[u8]) -> Vec<usize> {
         self.locate(pattern).collect()
     }
 
     /// Check if pattern exists in text
     #[inline(always)]
+    #[must_use]
     pub fn contains(&self, pattern: &[u8]) -> bool {
         !self.backward_search(pattern).is_empty()
     }
@@ -146,12 +151,13 @@ impl AliceIndex {
     ///
     /// Useful for advanced operations
     #[inline(always)]
+    #[must_use]
     pub fn search_range(&self, pattern: &[u8]) -> Range<usize> {
         self.backward_search(pattern)
     }
 
-    /// Resolve SA[i] using LF-mapping walk + BitVector check
-    /// O(sample_step) - No linear scan!
+    /// Resolve SA[i] using LF-mapping walk + `BitVector` check
+    /// `O(sample_step)` - No linear scan!
     fn resolve_sa(&self, mut i: usize) -> usize {
         let mut steps = 0;
 
@@ -210,6 +216,7 @@ impl AliceIndex {
     }
 
     /// Index size in bytes (approximate)
+    #[must_use]
     pub fn size_bytes(&self) -> usize {
         let n = self.wm.len();
 
@@ -232,16 +239,19 @@ impl AliceIndex {
 
     /// Get the SA sampling step
     #[inline]
+    #[must_use]
     pub fn sample_step(&self) -> usize {
         self.sample_step
     }
 
     /// Original text length (excluding sentinel)
+    #[must_use]
     pub fn text_len(&self) -> usize {
         self.wm.len().saturating_sub(1)
     }
 
-    /// Compression ratio: index_size / original_size
+    /// Compression ratio: `index_size` / `original_size`
+    #[must_use]
     pub fn compression_ratio(&self) -> f64 {
         let text_len = self.text_len();
         if text_len == 0 {
@@ -259,7 +269,7 @@ pub struct LocateIter<'a> {
     range: Range<usize>,
 }
 
-impl<'a> Iterator for LocateIter<'a> {
+impl Iterator for LocateIter<'_> {
     type Item = usize;
 
     #[inline]
@@ -279,7 +289,7 @@ impl<'a> Iterator for LocateIter<'a> {
     }
 }
 
-impl<'a> ExactSizeIterator for LocateIter<'a> {}
+impl ExactSizeIterator for LocateIter<'_> {}
 
 #[cfg(test)]
 mod tests {

@@ -39,6 +39,7 @@ pub const SENTINEL: u8 = 0;
 ///
 /// The returned array has length `text.len() + 1`.  `SA[0]` is always
 /// `text.len()` (the virtual sentinel position).
+#[must_use]
 pub fn build_suffix_array(text: &[u8]) -> Vec<usize> {
     let n = text.len();
 
@@ -80,12 +81,10 @@ fn classify_sl(s: &[u32]) -> Vec<bool> {
     }
     // Scan right to left.
     for i in (0..n - 1).rev() {
-        is_s[i] = if s[i] < s[i + 1] {
-            true
-        } else if s[i] > s[i + 1] {
-            false
-        } else {
-            is_s[i + 1] // same character: inherit from right neighbour
+        is_s[i] = match s[i].cmp(&s[i + 1]) {
+            std::cmp::Ordering::Less => true,
+            std::cmp::Ordering::Greater => false,
+            std::cmp::Ordering::Equal => is_s[i + 1], // same character: inherit from right neighbour
         };
     }
     is_s
@@ -361,6 +360,7 @@ fn sais(s: &[u32], sa: &mut [usize], alpha: usize) {
 /// Build BWT from text and suffix array.
 /// `BWT[i] = text[SA[i] - 1]` (or SENTINEL if `SA[i] == 0`).
 #[inline]
+#[must_use]
 pub fn build_bwt(text: &[u8], sa: &[usize]) -> Vec<u8> {
     let mut bwt = Vec::with_capacity(sa.len());
 
@@ -378,6 +378,7 @@ pub fn build_bwt(text: &[u8], sa: &[usize]) -> Vec<u8> {
 /// Build C-Table: `C[c]` = count of characters lexicographically smaller than `c`.
 /// Used for LF-mapping in backward search.
 #[inline]
+#[must_use]
 pub fn build_c_table(bwt: &[u8]) -> [usize; 256] {
     let mut counts = [0usize; 256];
     let mut c_table = [0usize; 256];

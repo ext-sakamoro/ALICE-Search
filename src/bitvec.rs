@@ -1,4 +1,4 @@
-//! Succinct BitVector (Optimized)
+//! Succinct `BitVector` (Optimized)
 //!
 //! **Interleaved Memory Layout**: [RankHeader(u64) | Body(8 x u64)]
 //! Optimized for L1 Cache Locality. Single fetch rank execution.
@@ -20,6 +20,7 @@ pub struct BitVector {
 }
 
 impl BitVector {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             data: Vec::new(),
@@ -28,7 +29,7 @@ impl BitVector {
     }
 
     /// Push a bit to the vector.
-    /// Header placeholders are written during push, finalized by build_index().
+    /// Header placeholders are written during push, finalized by `build_index()`.
     #[inline]
     pub fn push(&mut self, bit: bool) {
         let bit_idx = self.len % BLOCK_BITS;
@@ -89,6 +90,7 @@ impl BitVector {
 
     /// Access bit at index
     #[inline(always)]
+    #[must_use]
     pub fn get(&self, i: usize) -> bool {
         let block = i / BLOCK_BITS;
         let offset = i % BLOCK_BITS;
@@ -102,6 +104,7 @@ impl BitVector {
     /// Rank1(i): Count 1s in [0..i)
     /// **Cache Optimized**: Fetches header and body from contiguous memory.
     #[inline(always)]
+    #[must_use]
     pub fn rank1(&self, i: usize) -> usize {
         if i == 0 {
             return 0;
@@ -157,12 +160,14 @@ impl BitVector {
 
     /// Rank0(i): Count 0s in [0..i)
     #[inline(always)]
+    #[must_use]
     pub fn rank0(&self, i: usize) -> usize {
         i - self.rank1(i)
     }
 
     /// Rank(bit, i): Generalized rank query
     #[inline(always)]
+    #[must_use]
     pub fn rank(&self, bit: bool, i: usize) -> usize {
         if bit {
             self.rank1(i)
@@ -172,11 +177,13 @@ impl BitVector {
     }
 
     #[inline]
+    #[must_use]
     pub fn len(&self) -> usize {
         self.len
     }
 
     #[inline]
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.len == 0
     }
