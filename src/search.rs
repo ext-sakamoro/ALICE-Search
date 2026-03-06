@@ -291,6 +291,148 @@ impl Iterator for LocateIter<'_> {
 
 impl ExactSizeIterator for LocateIter<'_> {}
 
+// ============================================================================
+// Case-insensitive search
+// ============================================================================
+
+/// 大文字小文字を無視するインデックス。
+///
+/// ビルド時にテキストを小文字正規化するため、
+/// 検索も自動的に case-insensitive になる。
+pub struct CaseInsensitiveIndex {
+    inner: AliceIndex,
+}
+
+impl CaseInsensitiveIndex {
+    /// 大文字小文字無視インデックスを構築する。
+    ///
+    /// テキストを ASCII 小文字に正規化してからインデックスを作成する。
+    #[must_use]
+    pub fn build(text: &[u8], sample_step: usize) -> Self {
+        let lower: Vec<u8> = text.iter().map(|&b| ascii_lower(b)).collect();
+        Self {
+            inner: AliceIndex::build(&lower, sample_step),
+        }
+    }
+
+    /// パターンの出現回数（case-insensitive）。
+    #[must_use]
+    pub fn count(&self, pattern: &[u8]) -> usize {
+        let lower: Vec<u8> = pattern.iter().map(|&b| ascii_lower(b)).collect();
+        self.inner.count(&lower)
+    }
+
+    /// パターンが存在するか（case-insensitive）。
+    #[must_use]
+    pub fn contains(&self, pattern: &[u8]) -> bool {
+        let lower: Vec<u8> = pattern.iter().map(|&b| ascii_lower(b)).collect();
+        self.inner.contains(&lower)
+    }
+
+    /// 全出現位置を返す（case-insensitive）。
+    #[must_use]
+    pub fn locate_all(&self, pattern: &[u8]) -> Vec<usize> {
+        let lower: Vec<u8> = pattern.iter().map(|&b| ascii_lower(b)).collect();
+        self.inner.locate_all(&lower)
+    }
+
+    /// テキスト長。
+    #[must_use]
+    pub const fn text_len(&self) -> usize {
+        self.inner.text_len()
+    }
+}
+
+/// ASCII 大文字を小文字に変換する。非 ASCII はそのまま。
+#[inline]
+const fn ascii_lower(b: u8) -> u8 {
+    if b >= b'A' && b <= b'Z' {
+        b + 32
+    } else {
+        b
+    }
+}
+
+// ============================================================================
+// Incremental index (append + rebuild)
+// ============================================================================
+
+/// インクリメンタルインデックスビルダー。
+///
+/// テキストを逐次追加し、`rebuild()` で検索可能なインデックスを再構築する。
+/// 差分ビルドではなくフル再構築だが、追加 API を提供することで
+/// ユーザーコードがテキスト管理を自前で行う必要をなくす。
+pub struct IncrementalIndex {
+    /// 蓄積されたテキスト。
+    buffer: Vec<u8>,
+    /// SA サンプリングステップ。
+    sample_step: usize,
+    /// 現在のインデックス（`rebuild()` 後に有効）。
+    index: Option<AliceIndex>,
+}
+
+impl IncrementalIndex {
+    /// 新規作成。
+    #[must_use]
+    pub fn new(sample_step: usize) -> Self {
+        Self {
+            buffer: Vec::new(),
+            sample_step: sample_step.max(1),
+            index: None,
+        }
+    }
+
+    /// テキストを追加する。
+    ///
+    /// 追加後は `rebuild()` を呼ぶまで検索結果に反映されない。
+    pub fn append(&mut self, text: &[u8]) {
+        self.buffer.extend_from_slice(text);
+    }
+
+    /// 蓄積されたテキストからインデックスを再構築する。
+    pub fn rebuild(&mut self) {
+        self.index = Some(AliceIndex::build(&self.buffer, self.sample_step));
+    }
+
+    /// パターンの出現回数。`rebuild()` 後に有効。
+    #[must_use]
+    pub fn count(&self, pattern: &[u8]) -> usize {
+        self.index.as_ref().map_or(0, |idx| idx.count(pattern))
+    }
+
+    /// パターンが存在するか。
+    #[must_use]
+    pub fn contains(&self, pattern: &[u8]) -> bool {
+        self.index.as_ref().is_some_and(|idx| idx.contains(pattern))
+    }
+
+    /// 全出現位置。
+    #[must_use]
+    pub fn locate_all(&self, pattern: &[u8]) -> Vec<usize> {
+        self.index
+            .as_ref()
+            .map_or_else(Vec::new, |idx| idx.locate_all(pattern))
+    }
+
+    /// 蓄積テキストの長さ。
+    #[must_use]
+    pub const fn buffer_len(&self) -> usize {
+        self.buffer.len()
+    }
+
+    /// インデックスが構築済みか。
+    #[must_use]
+    pub const fn is_built(&self) -> bool {
+        self.index.is_some()
+    }
+
+    /// 蓄積テキストをクリアしてインデックスをリセットする。
+    pub fn clear(&mut self) {
+        self.buffer.clear();
+        self.index = None;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -595,5 +737,144 @@ mod tests {
         }
         // "issi" は "mississippi" に 2 回出現 (位置 1, 4)
         assert_eq!(results[0], vec![1, 4]);
+    }
+
+    // ====================================================================
+    // CaseInsensitiveIndex テスト
+    // ====================================================================
+
+    #[test]
+    fn test_case_insensitive_count() {
+        let text = b"Hello World HELLO world";
+        let index = CaseInsensitiveIndex::build(text, 4);
+
+        assert_eq!(index.count(b"hello"), 2);
+        assert_eq!(index.count(b"HELLO"), 2);
+        assert_eq!(index.count(b"Hello"), 2);
+        assert_eq!(index.count(b"world"), 2);
+        assert_eq!(index.count(b"WORLD"), 2);
+    }
+
+    #[test]
+    fn test_case_insensitive_contains() {
+        let text = b"Rust Programming";
+        let index = CaseInsensitiveIndex::build(text, 4);
+
+        assert!(index.contains(b"rust"));
+        assert!(index.contains(b"RUST"));
+        assert!(index.contains(b"programming"));
+        assert!(index.contains(b"PROGRAMMING"));
+        assert!(!index.contains(b"python"));
+    }
+
+    #[test]
+    fn test_case_insensitive_locate() {
+        let text = b"abABab";
+        let index = CaseInsensitiveIndex::build(text, 1);
+
+        let mut positions = index.locate_all(b"ab");
+        positions.sort_unstable();
+        assert_eq!(positions, vec![0, 2, 4]);
+    }
+
+    #[test]
+    fn test_case_insensitive_text_len() {
+        let text = b"Hello";
+        let index = CaseInsensitiveIndex::build(text, 4);
+        assert_eq!(index.text_len(), 5);
+    }
+
+    #[test]
+    fn test_case_insensitive_non_ascii_passthrough() {
+        // 非 ASCII バイトはそのまま通過する
+        let text = "café".as_bytes();
+        let index = CaseInsensitiveIndex::build(text, 4);
+        assert!(index.contains("caf".as_bytes()));
+    }
+
+    #[test]
+    fn test_ascii_lower() {
+        assert_eq!(ascii_lower(b'A'), b'a');
+        assert_eq!(ascii_lower(b'Z'), b'z');
+        assert_eq!(ascii_lower(b'a'), b'a');
+        assert_eq!(ascii_lower(b'z'), b'z');
+        assert_eq!(ascii_lower(b'0'), b'0');
+        assert_eq!(ascii_lower(b' '), b' ');
+        assert_eq!(ascii_lower(0xFF), 0xFF);
+    }
+
+    // ====================================================================
+    // IncrementalIndex テスト
+    // ====================================================================
+
+    #[test]
+    fn test_incremental_empty() {
+        let index = IncrementalIndex::new(4);
+        assert!(!index.is_built());
+        assert_eq!(index.buffer_len(), 0);
+        assert_eq!(index.count(b"a"), 0);
+        assert!(!index.contains(b"a"));
+        assert!(index.locate_all(b"a").is_empty());
+    }
+
+    #[test]
+    fn test_incremental_append_and_rebuild() {
+        let mut index = IncrementalIndex::new(4);
+        index.append(b"hello ");
+        index.append(b"world");
+        assert_eq!(index.buffer_len(), 11);
+        assert!(!index.is_built());
+
+        index.rebuild();
+        assert!(index.is_built());
+        assert_eq!(index.count(b"hello"), 1);
+        assert!(index.contains(b"world"));
+    }
+
+    #[test]
+    fn test_incremental_rebuild_reflects_new_data() {
+        let mut index = IncrementalIndex::new(1);
+        index.append(b"aaa");
+        index.rebuild();
+        assert_eq!(index.count(b"a"), 3);
+
+        index.append(b"aa");
+        // rebuild前は古いインデックス
+        assert_eq!(index.count(b"a"), 3);
+
+        index.rebuild();
+        assert_eq!(index.count(b"a"), 5);
+    }
+
+    #[test]
+    fn test_incremental_locate() {
+        let mut index = IncrementalIndex::new(1);
+        index.append(b"abcabc");
+        index.rebuild();
+
+        let mut positions = index.locate_all(b"abc");
+        positions.sort_unstable();
+        assert_eq!(positions, vec![0, 3]);
+    }
+
+    #[test]
+    fn test_incremental_clear() {
+        let mut index = IncrementalIndex::new(4);
+        index.append(b"hello");
+        index.rebuild();
+        assert!(index.is_built());
+
+        index.clear();
+        assert!(!index.is_built());
+        assert_eq!(index.buffer_len(), 0);
+        assert_eq!(index.count(b"hello"), 0);
+    }
+
+    #[test]
+    fn test_incremental_sample_step_zero_clamped() {
+        let index = IncrementalIndex::new(0);
+        // sample_step=0 は 1 にクランプされる
+        // 正常に動作することを検証
+        assert!(!index.is_built());
     }
 }

@@ -63,7 +63,7 @@ pub mod ffi;
 pub mod search;
 pub mod wavelet;
 
-pub use search::AliceIndex;
+pub use search::{AliceIndex, CaseInsensitiveIndex, IncrementalIndex};
 
 #[cfg(feature = "analytics")]
 pub mod analytics_bridge;
