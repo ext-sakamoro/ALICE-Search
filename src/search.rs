@@ -789,7 +789,7 @@ mod tests {
         // 非 ASCII バイトはそのまま通過する
         let text = "café".as_bytes();
         let index = CaseInsensitiveIndex::build(text, 4);
-        assert!(index.contains("caf".as_bytes()));
+        assert!(index.contains(b"caf"));
     }
 
     #[test]
