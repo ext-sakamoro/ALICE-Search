@@ -58,6 +58,9 @@ extern crate alloc;
 
 pub mod bitvec;
 pub mod bwt;
+pub mod pii_redact;
+
+pub use pii_redact::{detect_pii, redact, redact_placeholder, PiiKind, PiiMatch};
 #[cfg(feature = "ffi")]
 pub mod ffi;
 pub mod search;
