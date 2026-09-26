@@ -77,8 +77,8 @@ pub mod db_bridge;
 #[cfg(feature = "text")]
 pub mod text_bridge;
 
-/// Version
-pub const VERSION: &str = "0.2.1-ultra-fried";
+/// Version (always the built crate's `CARGO_PKG_VERSION`)
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg(test)]
 mod tests {
@@ -126,6 +126,8 @@ mod tests {
     #[test]
     fn test_version_not_empty() {
         assert!(!VERSION.is_empty());
+        // VERSION は Cargo.toml の version と常に一致する (手書き literal は drift する)
+        assert_eq!(VERSION, env!("CARGO_PKG_VERSION"));
     }
 
     #[test]
