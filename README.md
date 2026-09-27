@@ -255,15 +255,19 @@ alice-search = { path = "../ALICE-Search", features = ["cache"] }
 
 ## License
 
-**GNU AGPLv3** (Affero General Public License v3.0)
+`AGPL-3.0 OR LicenseRef-Commercial` — dual-licensed. Pick either.
 
-This library is free software under the terms of the GNU Affero General Public License.
+| Option | Terms | Use it when |
+|--------|-------|-------------|
+| **AGPL-3.0** | [LICENSE-AGPL](LICENSE-AGPL) — free, no reporting obligation | Your project is itself AGPL-compatible open source, or you are only using it internally |
+| **Commercial License** | [LICENSE-COMMERCIAL.md](LICENSE-COMMERCIAL.md) — paid, removes the copyleft | Closed-source product, proprietary SaaS, edge / firmware distribution, plugin redistribution, or a platform NDA that forbids source disclosure |
 
-**Why AGPL?**
-Search algorithms are public knowledge, but this **highly optimized Rust implementation** is protected. If you use this to provide a search service, you must release your source code.
+AGPL is a strong copyleft: a product, firmware image, or service that links
+`alice-search` and is distributed or served to users must be released under the AGPL
+as well. That is intentional for the open ecosystem, and the Commercial
+License exists for the cases where it is not something you are able to do.
 
-For proprietary/commercial use, please contact:
-**https://extoria.co.jp/en**
+Commercial licence enquiries: <contact@extoria.co.jp>
 
 ## Author
 
