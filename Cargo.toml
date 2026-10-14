@@ -21,7 +21,7 @@ alloc = []
 ffi = ["std"]
 text = ["dep:alice-text", "std"]         # ALICE-Text compressed text search
 analytics = ["dep:alice-analytics", "std"]  # ALICE-Analytics search query metrics
-db = ["dep:alice-db", "std"]  # ALICE-DB search metrics persistence
+db = ["dep:alice-db", "alice-db/fs", "std"]  # ALICE-DB search metrics persistence
 cache = ["dep:alice-cache", "std"]  # ALICE-Cache search result caching
 
 [dependencies]
