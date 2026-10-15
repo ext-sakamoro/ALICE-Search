@@ -38,6 +38,12 @@ jobs:
         working-directory: ALICE-Search
         run: cargo test --lib
 
+      # The db bridge sits behind an optional feature, so the default build never
+      # compiles it (alice-db comes from crates.io)
+      - name: Check the db bridge (optional feature)
+        working-directory: ALICE-Search
+        run: cargo check --lib --features db
+
   fmt:
     name: Format
     runs-on: ubuntu-latest
