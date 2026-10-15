@@ -25,11 +25,27 @@ need actionlint "brew install actionlint"
 step "ci.yml / fmt: Check formatting"
 ( export CARGO_TERM_COLOR="always"; cargo fmt -- --check )
 
+step "ci.yml / fmt: no-direct-rkyv guard (tests)"
+python3 scripts/test_no_direct_rkyv.py
+
+step "ci.yml / fmt: no-direct-rkyv guard"
+python3 scripts/no_direct_rkyv.py
+
 step "ci.yml / actionlint: actionlint"
 actionlint .github/workflows/*.yml
+
+step "ci.yml / test: Build (default)"
+( export CARGO_TERM_COLOR="always"; cargo build --lib )
 
 if [[ $quick -eq 1 ]]; then
   echo; echo "preflight --quick OK (test / bench suites skipped)"; exit 0
 fi
+
+step "ci.yml / test: Test"
+( export CARGO_TERM_COLOR="always"; cargo test --lib )
+
+step "security-audit.yml / audit: cargo audit"
+need cargo-audit "cargo install cargo-audit --locked"
+cargo audit --deny yanked
 
 echo; echo "preflight OK"

@@ -10,6 +10,34 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          path: ALICE-Search
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ALICE-Search
+
+      # The path siblings are all optional and outside `default`, so empty stubs
+      # derived from Cargo.toml are enough (see make-stubs.py)
+      - name: Create dependency stubs
+        run: python3 ALICE-Search/.github/make-stubs.py
+
+      - name: Build (default)
+        working-directory: ALICE-Search
+        run: cargo build --lib
+
+      - name: Test
+        working-directory: ALICE-Search
+        run: cargo test --lib
+
   fmt:
     name: Format
     runs-on: ubuntu-latest
@@ -20,6 +48,13 @@ jobs:
           components: rustfmt
       - name: Check formatting
         run: cargo fmt -- --check
+
+      # This crate must not depend on rkyv directly or archive anything through it
+      # (scripts/no_direct_rkyv.py, kept byte-identical across repositories)
+      - name: no-direct-rkyv guard (tests)
+        run: python3 scripts/test_no_direct_rkyv.py
+      - name: no-direct-rkyv guard
+        run: python3 scripts/no_direct_rkyv.py
 
   actionlint:
     name: actionlint (workflow YAML 検証)
