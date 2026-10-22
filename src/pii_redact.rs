@@ -576,10 +576,10 @@ mod tests {
 
     #[test]
     fn detects_ipv4() {
-        let hits = detect_pii("server 192.168.1.10 down");
+        let hits = detect_pii("server 192.0.2.10 down");
         assert!(hits
             .iter()
-            .any(|h| h.kind == PiiKind::IpV4 && h.matched == "192.168.1.10"));
+            .any(|h| h.kind == PiiKind::IpV4 && h.matched == "192.0.2.10"));
     }
 
     #[test]
@@ -675,7 +675,7 @@ mod tests {
     #[test]
     fn overlapping_matches_resolve_by_earliest() {
         // The IPv4 pattern must not eat digits that also look like a PAN.
-        let hits = detect_pii("10.0.0.1");
+        let hits = detect_pii("198.51.100.1");
         let ipv4_count = hits.iter().filter(|h| h.kind == PiiKind::IpV4).count();
         assert_eq!(ipv4_count, 1);
     }
