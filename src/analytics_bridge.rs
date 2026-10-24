@@ -3,7 +3,7 @@
 //! Search query metrics: unique queries (HLL), query latency (DDSketch),
 //! popular patterns (CMS).
 
-use alice_analytics::prelude::*;
+use alice_analytics::sketch::{CountMinSketch, DDSketch, HyperLogLog};
 
 /// Search query metrics collector.
 pub struct SearchMetrics {
