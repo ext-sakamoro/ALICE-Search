@@ -2,9 +2,9 @@
 name = "alice-search"
 version = "0.2.0"
 edition = "2021"
-authors = ["Moroya Sakamoto <sakamoro@alicelaw.net>"]
+authors = ["Moroya Sakamoto"]
 description = "FM-Index based full-text search. Compressed and fast."
-license = "AGPL-3.0 OR LicenseRef-Commercial"
+license = "LicenseRef-Proprietary"
 repository = "https://github.com/ext-sakamoro/ALICE-Search"
 keywords = ["search", "fm-index", "bwt", "compression", "alice"]
 categories = ["algorithms", "compression", "text-processing"]

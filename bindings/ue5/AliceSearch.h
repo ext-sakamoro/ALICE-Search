@@ -1,5 +1,5 @@
 // ALICE-Search — UE5 C++ Bindings
-// License: AGPL-3.0
+// License: LicenseRef-Proprietary
 // Author: Moroya Sakamoto
 //
 // 10 extern "C" declarations + RAII wrapper class

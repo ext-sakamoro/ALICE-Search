@@ -1,5 +1,5 @@
 // ALICE-Search — Unity C# Bindings
-// License: AGPL-3.0
+// License: LicenseRef-Proprietary
 // Author: Moroya Sakamoto
 //
 // 10 DllImport + IDisposable RAII wrapper
