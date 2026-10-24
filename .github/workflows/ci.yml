@@ -23,11 +23,6 @@ jobs:
         with:
           workspaces: ALICE-Search
 
-      # The remaining path sibling (alice-text) is optional and outside `default`, so an empty stub
-      # derived from Cargo.toml is enough for the default build (see make-stubs.py)
-      - name: Create dependency stubs
-        run: python3 ALICE-Search/.github/make-stubs.py
-
       - name: Build (default)
         working-directory: ALICE-Search
         run: cargo build --lib
@@ -37,8 +32,7 @@ jobs:
         run: cargo test --lib
 
       # Every optional feature on its own (read from Cargo.toml), so a bridge no other step builds cannot
-      # break unseen; the features whose dependency CI still stubs are listed, with the reason, in
-      # .github/feature-check-pending.txt
+      # break unseen
       - name: Test the feature check
         working-directory: ALICE-Search
         run: python3 scripts/feature_check.py --self-test
