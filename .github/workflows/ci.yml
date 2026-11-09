@@ -41,6 +41,12 @@ jobs:
         working-directory: ALICE-Search
         run: python3 scripts/feature_check.py --ci
 
+      # Without std: core + alloc only, on a target that has no std at all (the target is in
+      # rust-toolchain.toml; the cdylib crate type is dropped there)
+      - name: Clippy (no_std)
+        working-directory: ALICE-Search
+        run: cargo clippy --lib --no-default-features --target thumbv7em-none-eabihf -- -D warnings
+
       # The sibling bridges together, with their tests (the step above lints each feature's lib alone)
       - name: Clippy (bridges)
         working-directory: ALICE-Search

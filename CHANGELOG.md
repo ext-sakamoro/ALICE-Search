@@ -4,6 +4,9 @@ All notable changes to ALICE-Search will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- std なし (`default-features = false`) で build できなかった: `src/bwt.rs` が `vec!` を import せず、`std::cmp::Ordering` を使っていた (`alloc::vec` と `core::cmp` に変更) CI に std の無い target (`thumbv7em-none-eabihf`) での clippy を追加し、`rust-toolchain.toml` に target を足した
+
 ### Added
 - `text` feature: `CompressedSearchIndex::search(query, context_radius)` は各出現の位置と前後 `context_radius` byte の範囲 (`SearchHit`、text の長さで切る) を返し、`search_count(query)` は文字列の出現数を返す (ALICE-Text の `search` feature から移した) 試験: 出現の位置と範囲を `str::match_indices` から作った値と比べる、空の text、圧縮した入力
 - CI: `scripts/feature_check.py` が optional feature を 1 つずつ `cargo clippy --lib --features <名前> -- -D warnings` で build する (Cargo.toml の `[features]` から読む、その feature の code だけが出す警告 (捨てた `Result` など) も失敗にする、build した数が 0 なら失敗、self-test 11 通り) CI でまだ空の stub に対して build する feature は理由付きで `.github/feature-check-pending.txt` に書き、`PENDING` と出す 手元の preflight は実物の sibling で全 feature を build する (`scripts/preflight.local.sh`)

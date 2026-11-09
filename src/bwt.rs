@@ -7,6 +7,7 @@
 //! Nong, Zhang & Chan 2009 — O(N) time, O(N) space.
 
 extern crate alloc;
+use alloc::vec;
 use alloc::vec::Vec;
 
 /// Sentinel character (lexicographically smallest)
@@ -82,9 +83,9 @@ fn classify_sl(s: &[u32]) -> Vec<bool> {
     // Scan right to left.
     for i in (0..n - 1).rev() {
         is_s[i] = match s[i].cmp(&s[i + 1]) {
-            std::cmp::Ordering::Less => true,
-            std::cmp::Ordering::Greater => false,
-            std::cmp::Ordering::Equal => is_s[i + 1], // same character: inherit from right neighbour
+            core::cmp::Ordering::Less => true,
+            core::cmp::Ordering::Greater => false,
+            core::cmp::Ordering::Equal => is_s[i + 1], // same character: inherit from right neighbour
         };
     }
     is_s

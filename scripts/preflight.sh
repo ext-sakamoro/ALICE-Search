@@ -594,6 +594,14 @@ step "ci.yml / test: Check each optional feature"
 ( export CARGO_TERM_COLOR="always"; python3 scripts/feature_check.py --ci )
 )
 
+step "ci.yml / test: Clippy (no_std)"
+(
+  gh_step ci.yml.test
+relint
+grep -q '^thumbv7em-none-eabihf$' <<<"$(rustup target list --installed)" || rustup target add thumbv7em-none-eabihf
+( export CARGO_TERM_COLOR="always"; cargo clippy --lib --no-default-features --target thumbv7em-none-eabihf -- -D warnings )
+)
+
 step "ci.yml / test: Clippy (bridges)"
 (
   gh_step ci.yml.test
