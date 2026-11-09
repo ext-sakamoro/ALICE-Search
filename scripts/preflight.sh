@@ -6,7 +6,7 @@
 # Run `--quick` before every push.
 #
 # usage: scripts/preflight.sh [--quick]   (--quick skips the test / bench suites)
-# generator rev e2bb3de7ed4ef9138b566d6274e62d4557010dd9
+# generator rev 3144a7f8709082360b591d89edfb2344eeb3603d
 set -euo pipefail
 cd "$(dirname "$0")/.."
 # --- heavy slot (begin) ---
@@ -564,15 +564,17 @@ step() { printf '\n\033[1;34m== %s\033[0m\n' "$*"; }
 # touching the crate roots invalidates only this repo's fingerprints.
 relint() { git ls-files | grep -E '(^|/)src/(lib|main)\.rs$' | xargs -r touch; }
 need() { command -v "$1" >/dev/null 2>&1 || { echo "missing tool: $1 ($2)" >&2; exit 1; }; }
-has_toolchain() { grep -q "^$1" <<<"$(rustup toolchain list)"; }
 
 # Steps CI runs that this file cannot reproduce locally (they can only fail remotely):
 #   - security-audit.yml:changes:decide (reads AFTER, BEFORE, CREATED, EVENT, FORCED, PR_BASE, PR_HEAD, a value only the runner has)
 #   - security-audit.yml:audit:Install cargo-audit (needs network / runner-only)
 #   - security-audit.yml:gate:gate (reads NEEDS, a value only the runner has)
+#   - public-text.yml:public-text: uses actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 (an action this file cannot run)
+#   - public-text.yml:public-text:Public text (tree at HEAD, then the pushed commits) (no cargo / grep)
 
 need actionlint "brew install actionlint"
 need cargo-audit "cargo install cargo-audit --locked"
+command -v python >/dev/null 2>&1 || python() { python3 "$@"; }
 
 step "ci.yml / test: Build (default)"
 (
@@ -590,6 +592,13 @@ step "ci.yml / test: Check each optional feature"
 (
   gh_step ci.yml.test
 ( export CARGO_TERM_COLOR="always"; python3 scripts/feature_check.py --ci )
+)
+
+step "ci.yml / test: Clippy (bridges)"
+(
+  gh_step ci.yml.test
+relint
+( export CARGO_TERM_COLOR="always"; cargo clippy --all-targets --features text,analytics,db,cache -- -D warnings )
 )
 
 step "ci.yml / fmt: Check formatting"
@@ -622,6 +631,12 @@ step "security-audit.yml / audit: Generate lockfile"
 ( export CARGO_TERM_COLOR="always" CARGO_NET_RETRY="5"; cargo generate-lockfile )
 )
 
+step "public-text.yml / public-text: Tests of scripts/public_text.sh (no network)"
+(
+  gh_step public-text.yml.public-text
+( python scripts/test_public_text.py )
+)
+
 if [[ $quick -eq 1 ]]; then
   echo; echo "preflight --quick OK (test / bench suites skipped)"; exit 0
 fi
@@ -630,6 +645,12 @@ step "ci.yml / test: Test"
 (
   gh_step ci.yml.test
 ( export CARGO_TERM_COLOR="always"; cargo test --lib )
+)
+
+step "ci.yml / test: Test (bridges)"
+(
+  gh_step ci.yml.test
+( export CARGO_TERM_COLOR="always"; cargo test --features text,analytics,db,cache )
 )
 
 step "security-audit.yml / audit: Run cargo audit"

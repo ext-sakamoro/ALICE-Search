@@ -41,6 +41,15 @@ jobs:
         working-directory: ALICE-Search
         run: python3 scripts/feature_check.py --ci
 
+      # The sibling bridges together, with their tests (the step above lints each feature's lib alone)
+      - name: Clippy (bridges)
+        working-directory: ALICE-Search
+        run: cargo clippy --all-targets --features text,analytics,db,cache -- -D warnings
+
+      - name: Test (bridges)
+        working-directory: ALICE-Search
+        run: cargo test --features text,analytics,db,cache
+
   fmt:
     name: Format
     runs-on: ubuntu-latest
