@@ -4,6 +4,10 @@ All notable changes to ALICE-Search will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- CI: `scripts/feature_check.py` が optional feature ごとの clippy に加えて `cargo test --lib --features <名前>` を走らせ、最後に全 feature を同時に有効にした clippy (`--all-targets`) と test を走らせる 一緒に有効にできない feature は `.github/feature-check-apart.txt` に理由付きで書く (self-test 16 通り)
+
 ### Fixed
 - std なし (`default-features = false`) で build できなかった: `src/bwt.rs` が `vec!` を import せず、`std::cmp::Ordering` を使っていた (`alloc::vec` と `core::cmp` に変更) CI に std の無い target (`thumbv7em-none-eabihf`) での clippy を追加し、`rust-toolchain.toml` に target を足した
 
