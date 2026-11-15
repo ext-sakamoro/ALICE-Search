@@ -5,6 +5,7 @@ All notable changes to ALICE-Search will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- 依存: alice-text の要求を `">=2.0.0, <4"` に広げる (ALICE-Text 3.0.0 への移行の橋、解決は 2 のまま) Text 3.0.0 は保存する payload を alice-serial の bincode1 で書き (byte は同じ)、多言語表の map を順序付きにする この crate は 3.0.0 で build と試験が通る (`text,analytics,db,cache`、149 件)
 - 依存: feature `db` の alice-db を 0.7 に (展開は上限付き、blob の圧縮値に長さを記録、config は non_exhaustive) この crate は config を struct literal で作らないので code の変更なし
 
 - CI: `scripts/feature_check.py` が optional feature ごとの clippy に加えて `cargo test --lib --features <名前>` を走らせ、最後に全 feature を同時に有効にした clippy (`--all-targets`) と test を走らせる 一緒に有効にできない feature は `.github/feature-check-apart.txt` に理由付きで書く (self-test 16 通り)
